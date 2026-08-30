@@ -1,5 +1,6 @@
 import { EMPTY_FILTER, isFilterSpec, type FilterSpec } from "./filterExpression.ts";
 import { DEFAULT_THEME_ID, isValidThemeId } from "../game/themes.ts";
+import { DEFAULT_BASEMAP_ID, isValidBasemapId } from "../arcgis/mapSetup.ts";
 
 export interface SavedConfig {
   id: string;
@@ -10,6 +11,7 @@ export interface SavedConfig {
   zoom: number;
   filter: FilterSpec;
   themeId: string;
+  basemapId: string;
   savedAt: string;
 }
 
@@ -21,12 +23,14 @@ export function listSavedConfigs(): SavedConfig[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    // Configs saved before the filter/theme features existed are missing
-    // those fields entirely - backfill here rather than at every read site.
+    // Configs saved before the filter/theme/basemap features existed are
+    // missing those fields entirely - backfill here rather than at every
+    // read site.
     return (parsed as SavedConfig[]).map((c) => ({
       ...c,
       filter: isFilterSpec(c.filter) ? c.filter : EMPTY_FILTER,
       themeId: isValidThemeId(c.themeId) ? c.themeId : DEFAULT_THEME_ID,
+      basemapId: isValidBasemapId(c.basemapId) ? c.basemapId : DEFAULT_BASEMAP_ID,
     }));
   } catch {
     return [];

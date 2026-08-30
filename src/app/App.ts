@@ -29,6 +29,7 @@ import {
   unfreezeView,
   configureBasemapGallery,
   setMapWidgetsVisible,
+  setMapBasemap,
   DEFAULT_BASEMAP_ID,
 } from "../arcgis/mapSetup.ts";
 import { autoTuneMineDensity } from "../arcgis/mineDerivation.ts";
@@ -79,6 +80,7 @@ export class App {
   #activePanel: Destroyable | null = null;
   #layerOnMap: FeatureLayer | null = null;
   #pendingGoTo: Extent | { center: [number, number]; zoom: number } | null = null;
+  #pendingBasemapId: string | null = null;
   #themeId: string;
 
   constructor(elements: AppElements) {
@@ -167,6 +169,7 @@ export class App {
       };
       this.#setTheme(params.themeId);
       this.#pendingGoTo = { center: params.center, zoom: params.zoom };
+      this.#pendingBasemapId = params.basemapId;
       this.#store.setState({ screen: "framing", chosen });
     } catch (err) {
       console.error("Failed to restore the shared or saved location", err);
@@ -276,6 +279,11 @@ export class App {
       const goTo = this.#pendingGoTo;
       this.#pendingGoTo = null;
       await this.#view.goTo(goTo);
+    }
+
+    if (this.#pendingBasemapId) {
+      setMapBasemap(this.#mapEl, this.#pendingBasemapId);
+      this.#pendingBasemapId = null;
     }
 
     // A state change may have happened while we were awaiting view
@@ -432,6 +440,7 @@ export class App {
       zoom: view.zoom,
       filter: chosen.filter,
       themeId: this.#themeId,
+      basemapId: this.#mapEl.map.basemap?.id ?? DEFAULT_BASEMAP_ID,
     };
   }
 

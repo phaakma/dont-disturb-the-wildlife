@@ -21,7 +21,7 @@ import { computeSquareSubExtent, filterPointsInExtent } from "../arcgis/gridGeom
 import { queryClusterCentroids } from "../arcgis/clustering.ts";
 import { autoTuneMineDensity } from "../arcgis/mineDerivation.ts";
 import { withTimeout } from "../arcgis/requestTimeout.ts";
-import { showLayer, hideLayer } from "../arcgis/mapSetup.ts";
+import { showLayer, hideLayer, DEFAULT_BASEMAP_ID } from "../arcgis/mapSetup.ts";
 import type { GameGeometryType } from "../arcgis/layerDiscovery.ts";
 import { saveConfig } from "../app/savedConfigs.ts";
 import { buildShareUrl, type ShareParams } from "../app/shareUrl.ts";
@@ -232,6 +232,7 @@ export class FramingPanel {
       zoom: this.#options.view.zoom,
       filter: this.#filter,
       themeId: this.#options.themeId,
+      basemapId: this.#options.view.map?.basemap?.id ?? DEFAULT_BASEMAP_ID,
     };
   }
 

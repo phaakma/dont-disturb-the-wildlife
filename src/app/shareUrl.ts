@@ -1,5 +1,6 @@
 import { decodeFilterParam, encodeFilterParam, type FilterSpec } from "./filterExpression.ts";
 import { DEFAULT_THEME_ID, isValidThemeId } from "../game/themes.ts";
+import { DEFAULT_BASEMAP_ID, isValidBasemapId } from "../arcgis/mapSetup.ts";
 
 export interface ShareParams {
   itemId: string;
@@ -8,6 +9,7 @@ export interface ShareParams {
   zoom: number;
   filter: FilterSpec;
   themeId: string;
+  basemapId: string;
 }
 
 export function buildShareUrl(params: ShareParams): string {
@@ -18,6 +20,7 @@ export function buildShareUrl(params: ShareParams): string {
   url.searchParams.set("lat", String(params.center[1]));
   url.searchParams.set("zoom", String(params.zoom));
   url.searchParams.set("theme", params.themeId);
+  url.searchParams.set("basemap", params.basemapId);
   const encodedFilter = encodeFilterParam(params.filter);
   if (encodedFilter) url.searchParams.set("filter", encodedFilter);
   return url.toString();
@@ -38,6 +41,7 @@ export function parseShareParams(search: string): ShareParams | null {
   if (!Number.isFinite(zoom)) return null;
 
   const theme = params.get("theme");
+  const basemap = params.get("basemap");
   return {
     itemId,
     layerId,
@@ -45,5 +49,6 @@ export function parseShareParams(search: string): ShareParams | null {
     zoom,
     filter: decodeFilterParam(params.get("filter")),
     themeId: isValidThemeId(theme) ? theme! : DEFAULT_THEME_ID,
+    basemapId: isValidBasemapId(basemap) ? basemap : DEFAULT_BASEMAP_ID,
   };
 }

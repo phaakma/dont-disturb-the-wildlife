@@ -25,6 +25,17 @@ export function configureBasemapGallery(galleryEl: ArcgisBasemapGalleryElement):
   });
 }
 
+export function isValidBasemapId(id: string | null | undefined): id is (typeof BASEMAP_IDS)[number] {
+  return (BASEMAP_IDS as readonly string[]).includes(id ?? "");
+}
+
+/** Apply a saved/shared basemap choice to the map, ignoring unknown ids. */
+export function setMapBasemap(mapEl: ArcgisMapElement, basemapId: string): void {
+  if (!isValidBasemapId(basemapId)) return;
+  const basemap = Basemap.fromId(basemapId);
+  if (basemap) mapEl.map.basemap = basemap;
+}
+
 /** Hide the zoom and basemap-gallery widgets while the game is frozen (preparing/playing) - a visible but inert control is worse than no control. */
 export function setMapWidgetsVisible(widgets: HTMLElement[], visible: boolean): void {
   for (const widget of widgets) widget.classList.toggle("chrome-hidden", !visible);

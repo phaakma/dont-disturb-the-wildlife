@@ -1,5 +1,7 @@
 # Don't Disturb the Wildlife!
 
+**[Play it live](https://phaakma.github.io/dont-disturb-the-wildlife/)**
+
 Minesweeper, but the "mines" are wildlife hiding in real-world data. Pick any
 public point layer, frame an area on the map, and the app clusters nearby
 points into hiding spots using the map SDK's clustering renderer — each
@@ -14,7 +16,7 @@ careful.
 1. **Choose your theme** — pick which animal is hiding under the grid: kiwi
    (the default), bear, snake, crocodile, panther, lion, giraffe, turtle,
    elephant, or owl.
-2. **Choose a point layer** — search public hosted feature services
+2. **Choose a point layer** — search public hosted ArcGIS Online feature services
    (anonymously, no sign-in) and pick a point layer. A service can contain
    line/polygon layers too, so if there's more than one point layer you'll be
    asked which one to use.

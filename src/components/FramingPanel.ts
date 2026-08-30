@@ -115,6 +115,7 @@ export class FramingPanel {
   #clusterCount: number | null = null;
   #clusterCountStatus: "idle" | "loading" | "ready" | "error" = "idle";
 
+  #destroyed = false;
   #startError: string | null;
   #previewVisible = false;
   #saveMessage: string | null = null;
@@ -167,6 +168,7 @@ export class FramingPanel {
   }
 
   destroy(): void {
+    this.#destroyed = true;
     this.#watchHandle.remove();
     this.#countAbort?.abort();
     this.#clusterCountAbort?.abort();
@@ -199,8 +201,18 @@ export class FramingPanel {
    * this puts it back to whatever the preview toggle currently calls for,
    * so a background check never leaves the preview showing the wrong
    * radius (or a missing renderer, for polygon/line layers).
+   *
+   * Must no-op once destroyed: starting the game hands the same layer to a
+   * fresh autoTuneMineDensity() run (App#enterPreparing) while this panel's
+   * own in-flight cluster-count/density-check promises are still resolving
+   * (destroy() only aborts their signal/token, it can't cancel a promise
+   * that's already mid-flight) - without this guard, a stale callback
+   * landing after handoff stomps the new run's featureReduction mid-probe,
+   * which can make it read back zero clusters and wrongly report "not
+   * enough data" for an area that actually has plenty.
    */
   #applyFeatureReduction(): void {
+    if (this.#destroyed) return;
     const layer = this.#options.layer;
     layer.featureReduction = this.#previewVisible
       ? this.#options.geometryType === "point"
@@ -412,6 +424,10 @@ export class FramingPanel {
   }
 
   #render(): void {
+    // A stale query callback (see #applyFeatureReduction) landing after
+    // destroy() must not overwrite whatever screen now owns this same
+    // shared panel container.
+    if (this.#destroyed) return;
     const countLine =
       // A feature-count failure is why Start stays disabled (#canStart), so
       // it takes priority over the cluster line, which is purely informational.

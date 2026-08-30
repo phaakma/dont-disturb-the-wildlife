@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Don't Disturb the Wildlife!</title>
+    <link rel="icon" href="/animals/kiwi.svg" type="image/svg+xml" />
+  </head>
+
+  <body>
+    <calcite-shell>
+      <calcite-navigation slot="header">
+        <calcite-action id="menu-toggle" slot="navigation-action" icon="hamburger" text="Menu" title="Menu"></calcite-action>
+        <calcite-navigation-logo heading-level="1" slot="logo" heading="Don't Disturb the Wildlife!"></calcite-navigation-logo>
+        <calcite-action id="about-toggle" slot="navigation-action" icon="information" text="About" title="About"></calcite-action>
+      </calcite-navigation>
+
+      <div id="landing-page"></div>
+
+      <calcite-shell-panel slot="panel-start" position="start" id="side-panel" class="chrome-hidden">
+        <div id="panel-content"></div>
+      </calcite-shell-panel>
+
+      <div id="map-stage" class="chrome-hidden">
+        <div id="map-square">
+          <arcgis-map id="game-map" basemap="dark-gray-vector" center="0,0" zoom="2">
+            <arcgis-zoom id="map-zoom-widget" slot="top-left"></arcgis-zoom>
+            <arcgis-basemap-gallery id="map-basemap-gallery" slot="top-right"></arcgis-basemap-gallery>
+          </arcgis-map>
+          <div id="board-overlay"></div>
+        </div>
+      </div>
+    </calcite-shell>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

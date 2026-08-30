@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="52" y="4" width="24" height="46" rx="10" fill="#e8c877"/>
+  <circle cx="58" cy="10" r="6" fill="#e8c877"/>
+  <circle cx="70" cy="10" r="6" fill="#e8c877"/>
+  <circle cx="58" cy="6" r="3.5" fill="#7a5230"/>
+  <circle cx="70" cy="6" r="3.5" fill="#7a5230"/>
+  <circle cx="30" cy="52" r="10" fill="#e8c877"/>
+  <circle cx="98" cy="52" r="10" fill="#e8c877"/>
+  <circle cx="64" cy="70" r="42" fill="#e8c877"/>
+  <g fill="#8a5a2a" opacity="0.85">
+    <ellipse cx="42" cy="52" rx="8" ry="6"/>
+    <ellipse cx="84" cy="52" rx="8" ry="6"/>
+    <ellipse cx="64" cy="46" rx="7" ry="5"/>
+    <ellipse cx="30" cy="80" rx="7" ry="5"/>
+    <ellipse cx="98" cy="80" rx="7" ry="5"/>
+    <ellipse cx="64" cy="96" rx="8" ry="6"/>
+  </g>
+  <circle cx="50" cy="66" r="5" fill="#1c1108"/>
+  <circle cx="78" cy="66" r="5" fill="#1c1108"/>
+  <circle cx="48.5" cy="64.5" r="1.5" fill="#fff"/>
+  <circle cx="76.5" cy="64.5" r="1.5" fill="#fff"/>
+  <ellipse cx="64" cy="86" rx="8" ry="5" fill="#7a5230"/>
+</svg>

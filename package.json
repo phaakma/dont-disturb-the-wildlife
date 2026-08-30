@@ -1,0 +1,23 @@
+{
+  "name": "dont-disturb-the-wildlife",
+  "description": "Don't Disturb the Wildlife! - find wildlife hidden in real-world location data without waking it up",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "node --test src/game/**/*.test.ts"
+  },
+  "dependencies": {
+    "@arcgis/charts-components": "^5.1.0",
+    "@arcgis/core": "^5.1.0",
+    "@arcgis/map-components": "^5.1.0",
+    "@esri/calcite-components": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "~24.10.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.16"
+  }
+}

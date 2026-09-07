@@ -120,6 +120,7 @@ export class App {
   }
 
   async #onLayerPicked(result: LayerPickerResult): Promise<void> {
+    this.#store.setState({ screen: "loading" });
     try {
       const layer = await loadGameLayer(result.item, result.layerId);
       const chosen: ChosenLayer = {
@@ -138,6 +139,7 @@ export class App {
   }
 
   async #playSavedMapExample(example: SavedMapExample): Promise<void> {
+    this.#store.setState({ screen: "loading" });
     try {
       const item = await loadPortalItemById(example.itemId);
       const layer = await loadGameLayer(item, example.layerId);
@@ -161,6 +163,7 @@ export class App {
 
   /** Restore a shared URL or a saved config: load the layer, then frame it at the given pan/zoom. */
   async #loadAndFrame(params: ShareParams): Promise<void> {
+    this.#store.setState({ screen: "loading" });
     try {
       const item = await loadPortalItemById(params.itemId);
       const layer = await loadGameLayer(item, params.layerId);
@@ -205,6 +208,10 @@ export class App {
       case "picking-layer":
         // The dialog is a standalone overlay opened by the landing page;
         // the page behind it is left as-is.
+        break;
+      case "loading":
+        this.#setGameChromeVisible(true);
+        this.#enterLoading();
         break;
       case "framing":
         this.#setGameChromeVisible(true);
@@ -260,6 +267,24 @@ export class App {
       },
       onCopyUrl: (config: SavedConfig) => navigator.clipboard.writeText(buildShareUrl(config)),
     });
+  }
+
+  /**
+   * Shown the instant the user commits to a layer, before its portal item/
+   * FeatureLayer have loaded (see #onLayerPicked/#playSavedMapExample/
+   * #loadAndFrame) - reveals the map + panel chrome right away with a
+   * loader, instead of leaving the landing page up with no feedback during
+   * that network round trip.
+   */
+  #enterLoading(): void {
+    this.#panelContent.innerHTML = `
+      <calcite-panel heading="Loading your board">
+        <div style="padding:0 1rem 1rem; display:flex; flex-direction:column; gap:0.75rem; align-items:center;">
+          <calcite-loader label="Loading" scale="l"></calcite-loader>
+          <p style="margin:0; text-align:center;">Fetching your map data...</p>
+        </div>
+      </calcite-panel>
+    `;
   }
 
   async #enterFraming(chosen: ChosenLayer, startError: string | null, gridSize?: number): Promise<void> {

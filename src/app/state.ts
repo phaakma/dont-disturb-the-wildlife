@@ -20,6 +20,13 @@ export interface ChosenLayer {
 export type AppState =
   | { screen: "intro" }
   | { screen: "picking-layer" }
+  // Transitional screen shown the instant the user commits to a layer
+  // (Try Now / a saved config / a shared URL) but before its portal item
+  // and FeatureLayer have finished loading - see App.#enterLoading. Shows
+  // the game chrome (map + panel) immediately with a loader instead of
+  // leaving the user on the landing page with no feedback during that
+  // network round trip.
+  | { screen: "loading" }
   // FramingPanel owns its own transient UI state (difficulty, live extent,
   // feature count) the same way LayerPickerDialog owns its search state -
   // nothing else in the app needs it, so it isn't lifted into AppState.

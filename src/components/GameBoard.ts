@@ -33,6 +33,19 @@ export class GameBoard {
   #hasInteracted = false;
   #focusedIndex = 0;
   #longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  // On Android Chrome (and other Chromium-based mobile browsers), a sustained
+  // touch-and-hold also fires a native `contextmenu` event at roughly the
+  // same ~500ms threshold as our own long-press timer below. Without this
+  // guard, both paths call #handleFlag for the same gesture, toggling the
+  // flag on and immediately back off. Whichever path detects the long press
+  // first sets this so the other one skips its own toggle.
+  #longPressHandled = false;
+  // A touch that lifts after a long-press still gets translated into a
+  // trailing `click` by the browser, even though the long press already
+  // toggled the flag. Without this guard that click falls through to
+  // #handleReveal - most dangerously right after an unflag, since the cell
+  // is "hidden" again by the time the click lands, so it gets revealed.
+  #suppressNextClick = false;
 
   constructor(overlay: HTMLElement, options: GameBoardOptions) {
     this.#overlay = overlay;
@@ -182,20 +195,47 @@ export class GameBoard {
         el.setAttribute("aria-label", `Row ${cell.row + 1}, column ${cell.col + 1}, unexplored`);
       }
 
-      el.addEventListener("click", () => this.#handleReveal(cell.row, cell.col));
+      el.addEventListener("click", () => {
+        if (this.#suppressNextClick) {
+          this.#suppressNextClick = false;
+          return;
+        }
+        this.#handleReveal(cell.row, cell.col);
+      });
       el.addEventListener("contextmenu", (e) => {
         e.preventDefault();
+        // A pending timer here means this contextmenu is the native touch
+        // long-press echo of a gesture our own timer hasn't reached yet -
+        // cancel it so it can't also fire (see #longPressHandled above).
+        if (this.#longPressTimer) {
+          clearTimeout(this.#longPressTimer);
+          this.#longPressTimer = null;
+        }
+        if (this.#longPressHandled) {
+          this.#longPressHandled = false;
+          return;
+        }
         this.#handleFlag(cell.row, cell.col);
       });
       el.addEventListener("keydown", (e) => this.#onKeyDown(e, cell.row, cell.col));
       el.addEventListener("pointerdown", (e) => {
         if (e.pointerType !== "touch") return;
-        this.#longPressTimer = setTimeout(() => this.#handleFlag(cell.row, cell.col), LONG_PRESS_MS);
+        this.#longPressHandled = false;
+        this.#suppressNextClick = false;
+        this.#longPressTimer = setTimeout(() => {
+          this.#longPressTimer = null;
+          this.#longPressHandled = true;
+          this.#suppressNextClick = true;
+          this.#handleFlag(cell.row, cell.col);
+        }, LONG_PRESS_MS);
       });
       el.addEventListener("pointerup", () => {
         if (this.#longPressTimer) clearTimeout(this.#longPressTimer);
       });
       el.addEventListener("pointerleave", () => {
+        if (this.#longPressTimer) clearTimeout(this.#longPressTimer);
+      });
+      el.addEventListener("pointercancel", () => {
         if (this.#longPressTimer) clearTimeout(this.#longPressTimer);
       });
 

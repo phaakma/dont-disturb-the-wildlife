@@ -21,10 +21,6 @@ calcite-shell {
   max-width: 100vw;
 }
 
-#menu-toggle {
-  display: none;
-}
-
 #panel-content {
   padding: 1rem;
   display: flex;
@@ -40,20 +36,28 @@ calcite-shell {
 }
 
 @media (max-width: 700px) {
-  #menu-toggle {
-    display: inline-flex;
+  #panel-content {
+    padding: 0.5rem;
+    gap: 0.5rem;
   }
 
-  #side-panel {
-    --calcite-shell-panel-width: 85vw;
+  /* Zoom is desktop-only on mobile - pinch/drag on the map still works.
+     ID selector + !important beats .chrome-hidden either way, so this is
+     independent of the JS-driven show/hide toggling of the widget. */
+  #map-zoom-widget {
+    display: none !important;
   }
 }
 
 /* The map must be a fixed square so the mine grid maps 1:1 onto the view
    extent (see IMPLEMENTATION_PLAN.md D2). This stage centres the largest
-   square that fits the available space. */
+   square that fits the available space. `flex: 1 1 auto; min-height: 0`
+   (rather than height:100%) is required so it claims the leftover space
+   once it's a sibling of the docked panel-top/panel-bottom shell panels
+   on mobile - see calcite-shell's flex-column content layout. */
 #map-stage {
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   display: flex;
   align-items: center;

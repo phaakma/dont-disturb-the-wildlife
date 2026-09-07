@@ -10,7 +10,6 @@
   <body>
     <calcite-shell>
       <calcite-navigation slot="header">
-        <calcite-action id="menu-toggle" slot="navigation-action" icon="hamburger" text="Menu" title="Menu"></calcite-action>
         <calcite-navigation-logo heading-level="1" slot="logo" heading="Don't Disturb the Wildlife!"></calcite-navigation-logo>
         <calcite-action id="about-toggle" slot="navigation-action" icon="information" text="About" title="About"></calcite-action>
       </calcite-navigation>
@@ -20,6 +19,8 @@
       <calcite-shell-panel slot="panel-start" position="start" id="side-panel" class="chrome-hidden">
         <div id="panel-content"></div>
       </calcite-shell-panel>
+
+      <calcite-shell-panel id="mobile-action-panel" slot="panel-bottom" class="chrome-hidden"></calcite-shell-panel>
 
       <div id="map-stage" class="chrome-hidden">
         <div id="map-square">

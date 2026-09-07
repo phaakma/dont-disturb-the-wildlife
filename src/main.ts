@@ -37,8 +37,8 @@ if (!sidePanel) throw new Error("#side-panel not found in index.html");
 const mapStage = document.getElementById("map-stage");
 if (!mapStage) throw new Error("#map-stage not found in index.html");
 
-const menuToggle = document.getElementById("menu-toggle");
-if (!menuToggle) throw new Error("#menu-toggle not found in index.html");
+const mobileActionPanel = document.getElementById("mobile-action-panel");
+if (!mobileActionPanel) throw new Error("#mobile-action-panel not found in index.html");
 
 const aboutToggle = document.getElementById("about-toggle");
 if (!aboutToggle) throw new Error("#about-toggle not found in index.html");
@@ -52,7 +52,7 @@ if (!basemapGallery) throw new Error("#map-basemap-gallery not found in index.ht
 const basemapGalleryExpand = document.getElementById("map-basemap-gallery-expand") as ArcgisExpandElement | null;
 if (!basemapGalleryExpand) throw new Error("#map-basemap-gallery-expand not found in index.html");
 
-setupResponsivePanel(sidePanel, menuToggle);
+setupResponsivePanel(sidePanel);
 
 aboutToggle.addEventListener("click", () => new AboutDialog().open());
 
@@ -63,7 +63,7 @@ new App({
   landingContent,
   sidePanel,
   mapStage,
-  menuToggle,
+  mobileActionPanel,
   zoomWidget,
   basemapGallery,
   basemapGalleryExpand,

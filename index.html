@@ -10,7 +10,6 @@
   <body>
     <calcite-shell>
       <calcite-navigation slot="header">
-        <calcite-action id="menu-toggle" slot="navigation-action" icon="hamburger" text="Menu" title="Menu"></calcite-action>
         <calcite-navigation-logo heading-level="1" slot="logo" heading="Don't Disturb the Wildlife!"></calcite-navigation-logo>
         <calcite-action id="about-toggle" slot="navigation-action" icon="information" text="About" title="About"></calcite-action>
       </calcite-navigation>
@@ -21,11 +20,15 @@
         <div id="panel-content"></div>
       </calcite-shell-panel>
 
+      <calcite-shell-panel id="mobile-action-panel" slot="panel-bottom" class="chrome-hidden"></calcite-shell-panel>
+
       <div id="map-stage" class="chrome-hidden">
         <div id="map-square">
           <arcgis-map id="game-map" basemap="dark-gray-vector" center="0,0" zoom="2">
             <arcgis-zoom id="map-zoom-widget" slot="top-left"></arcgis-zoom>
-            <arcgis-basemap-gallery id="map-basemap-gallery" slot="top-right"></arcgis-basemap-gallery>
+            <arcgis-expand id="map-basemap-gallery-expand" slot="top-right" expand-icon="basemap" expand-tooltip="Change basemap" collapse-tooltip="Close basemap picker">
+              <arcgis-basemap-gallery id="map-basemap-gallery"></arcgis-basemap-gallery>
+            </arcgis-expand>
           </arcgis-map>
           <div id="board-overlay"></div>
         </div>

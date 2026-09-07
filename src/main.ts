@@ -7,6 +7,7 @@ import "./style.css";
 import "@arcgis/map-components/components/arcgis-map";
 import "@arcgis/map-components/components/arcgis-zoom";
 import "@arcgis/map-components/components/arcgis-basemap-gallery";
+import "@arcgis/map-components/components/arcgis-expand";
 import "@esri/calcite-components/components/calcite-shell";
 import "@esri/calcite-components/components/calcite-shell-panel";
 import "@esri/calcite-components/components/calcite-navigation";
@@ -16,7 +17,7 @@ import "@esri/calcite-components/components/calcite-action";
 import { App } from "./app/App.ts";
 import { setupResponsivePanel } from "./app/responsivePanel.ts";
 import { AboutDialog } from "./components/AboutDialog.ts";
-import type { ArcgisMapElement, ArcgisBasemapGalleryElement } from "./arcgis/mapSetup.ts";
+import type { ArcgisMapElement, ArcgisBasemapGalleryElement, ArcgisExpandElement } from "./arcgis/mapSetup.ts";
 
 const panelContent = document.getElementById("panel-content");
 if (!panelContent) throw new Error("#panel-content not found in index.html");
@@ -36,8 +37,8 @@ if (!sidePanel) throw new Error("#side-panel not found in index.html");
 const mapStage = document.getElementById("map-stage");
 if (!mapStage) throw new Error("#map-stage not found in index.html");
 
-const menuToggle = document.getElementById("menu-toggle");
-if (!menuToggle) throw new Error("#menu-toggle not found in index.html");
+const mobileActionPanel = document.getElementById("mobile-action-panel");
+if (!mobileActionPanel) throw new Error("#mobile-action-panel not found in index.html");
 
 const aboutToggle = document.getElementById("about-toggle");
 if (!aboutToggle) throw new Error("#about-toggle not found in index.html");
@@ -48,8 +49,22 @@ if (!zoomWidget) throw new Error("#map-zoom-widget not found in index.html");
 const basemapGallery = document.getElementById("map-basemap-gallery") as ArcgisBasemapGalleryElement | null;
 if (!basemapGallery) throw new Error("#map-basemap-gallery not found in index.html");
 
-setupResponsivePanel(sidePanel, menuToggle);
+const basemapGalleryExpand = document.getElementById("map-basemap-gallery-expand") as ArcgisExpandElement | null;
+if (!basemapGalleryExpand) throw new Error("#map-basemap-gallery-expand not found in index.html");
+
+setupResponsivePanel(sidePanel);
 
 aboutToggle.addEventListener("click", () => new AboutDialog().open());
 
-new App({ panelContent, mapEl, boardOverlay, landingContent, sidePanel, mapStage, menuToggle, zoomWidget, basemapGallery });
+new App({
+  panelContent,
+  mapEl,
+  boardOverlay,
+  landingContent,
+  sidePanel,
+  mapStage,
+  mobileActionPanel,
+  zoomWidget,
+  basemapGallery,
+  basemapGalleryExpand,
+});

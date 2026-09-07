@@ -29,6 +29,7 @@ import { buildWhereClause, type FilterFieldType, type FilterSpec } from "../app/
 import { FilterDialog, type FilterFieldInfo } from "./FilterDialog.ts";
 import { ShareDialog } from "./ShareDialog.ts";
 import { DIFFICULTY_SIZE, type Difficulty } from "../game/types.ts";
+import { MOBILE_BREAKPOINT, isMobile } from "../app/responsive.ts";
 
 const COUNT_TIMEOUT_MS = 15_000;
 // Fixed preview radius, distinct from the game's auto-tuned radius (which
@@ -78,6 +79,13 @@ export interface FramingPanelOptions {
   initialError?: string | null;
   initialFilter: FilterSpec;
   themeId: string;
+  /**
+   * On mobile, Start/Share/Start Over render here (docked below the map via
+   * calcite-shell's panel-bottom slot) instead of inline in `container`, so
+   * they stay reachable/prominent without the rest of the controls pushing
+   * them below the fold - see App#enterFraming.
+   */
+  bottomContainer: HTMLElement;
   onStart: (gridSize: number, gridExtent: Extent, featureCount: number) => void;
   onChangeLayer: () => void;
   onFilterChange: (filter: FilterSpec) => void;
@@ -122,6 +130,8 @@ export class FramingPanel {
   #saveMessageTimer: ReturnType<typeof setTimeout> | null = null;
   #filter: FilterSpec;
   #filterDialog: FilterDialog;
+  #mq: MediaQueryList;
+  #onBreakpointChange = (): void => this.#render();
 
   constructor(container: HTMLElement, options: FramingPanelOptions) {
     this.#container = container;
@@ -164,11 +174,20 @@ export class FramingPanel {
       { initial: true },
     );
 
+    // Keeps the top/bottom split in sync if the viewport crosses the mobile
+    // breakpoint mid-framing (resize or device rotation), not just at
+    // construction time.
+    this.#mq = window.matchMedia(MOBILE_BREAKPOINT);
+    this.#mq.addEventListener("change", this.#onBreakpointChange);
+
     this.#render();
   }
 
   destroy(): void {
     this.#destroyed = true;
+    this.#mq.removeEventListener("change", this.#onBreakpointChange);
+    this.#options.bottomContainer.classList.add("chrome-hidden");
+    this.#options.bottomContainer.replaceChildren();
     this.#watchHandle.remove();
     this.#countAbort?.abort();
     this.#clusterCountAbort?.abort();
@@ -428,6 +447,7 @@ export class FramingPanel {
     // destroy() must not overwrite whatever screen now owns this same
     // shared panel container.
     if (this.#destroyed) return;
+    const mobile = isMobile();
     const countLine =
       // A feature-count failure is why Start stays disabled (#canStart), so
       // it takes priority over the cluster line, which is purely informational.
@@ -441,60 +461,107 @@ export class FramingPanel {
               ? `<p style="margin:0;">${this.#clusterCount} cluster${this.#clusterCount === 1 ? "" : "s"} in the framed area.</p>`
               : `<p style="margin:0;">Pan and zoom to frame your board.</p>`;
 
-    this.#container.innerHTML = `
-      <calcite-panel heading="Frame your board">
-        <div style="padding:0 1rem 1rem; display:flex; flex-direction:column; gap:0.75rem;">
+    const startBtnHtml = `<calcite-button id="start-btn" width="full" ${this.#canStart() ? "" : "disabled"}>Start game</calcite-button>`;
+    const shareBtnHtml = `<calcite-button id="share-btn" appearance="outline" width="full" icon-start="share">Share</calcite-button>`;
+    const startOverBtnHtml = `<calcite-button id="change-layer-btn" appearance="transparent" width="full">Start Over</calcite-button>`;
+
+    if (mobile) {
+      // Compact layout: only what's essential fits above the map, and the
+      // Start/Share/Start Over buttons dock below it (bottomContainer) so
+      // they stay reachable without scrolling - see FramingPanelOptions
+      // and App#enterFraming. Difficulty picker, Filter, and Save config
+      // are desktop-only (see #canStart/#filter - state still tracked
+      // internally, just no mobile UI to change it).
+      this.#options.bottomContainer.classList.remove("chrome-hidden");
+      this.#options.bottomContainer.innerHTML = `
+        <div style="padding:0.5rem 1rem; display:flex; flex-direction:column; gap:0.5rem;">
+          ${startBtnHtml}
+          ${shareBtnHtml}
+          ${startOverBtnHtml}
+        </div>
+      `;
+
+      this.#container.innerHTML = `
+        <div style="padding:0.5rem 0.75rem; display:flex; flex-direction:column; gap:0.5rem;">
           <p style="margin:0;">Layer: <strong>${escapeHtml(this.#options.layerName)}</strong></p>
-          <p style="margin:0; color: var(--calcite-color-text-3);">From: ${escapeHtml(this.#options.itemTitle)}</p>
+          <p style="margin:0; color: var(--calcite-color-text-3); font-size:0.85rem;">From: ${escapeHtml(this.#options.itemTitle)}</p>
 
           ${
             this.#startError
               ? `<calcite-notice open kind="warning" closable><div slot="message">${escapeHtml(this.#startError)}</div></calcite-notice>`
               : ""
           }
-
-          <calcite-segmented-control id="difficulty-control" width="full" scale="s">
-            <calcite-segmented-control-item value="beginner" ${this.#difficulty === "beginner" ? "checked" : ""}>Beginner 9×9</calcite-segmented-control-item>
-            <calcite-segmented-control-item value="intermediate" ${this.#difficulty === "intermediate" ? "checked" : ""}>Intermediate 16×16</calcite-segmented-control-item>
-            <calcite-segmented-control-item value="expert" ${this.#difficulty === "expert" ? "checked" : ""}>Expert 22×22</calcite-segmented-control-item>
-            <calcite-segmented-control-item value="custom" ${this.#difficulty === "custom" ? "checked" : ""}>Custom</calcite-segmented-control-item>
-          </calcite-segmented-control>
-
           ${
-            this.#difficulty === "custom"
-              ? `<calcite-slider id="custom-size-slider" min="${CUSTOM_MIN}" max="${CUSTOM_MAX}" value="${this.#gridSize}" label-handles ticks="2"></calcite-slider>`
+            this.#countStatus === "error"
+              ? `<calcite-notice open kind="danger"><div slot="message">${escapeHtml(this.#countError ?? "Count failed.")}</div></calcite-notice>`
               : ""
           }
-
-          ${countLine}
 
           <calcite-label layout="inline" style="margin:0;">
             <calcite-switch id="preview-toggle" ${this.#previewVisible ? "checked" : ""}></calcite-switch>
             ${this.#options.geometryType === "point" ? "Show point clusters" : "Show feature clusters"}
           </calcite-label>
-
-          <calcite-button id="start-btn" width="full" ${this.#canStart() ? "" : "disabled"}>Start game</calcite-button>
-
-          <calcite-button id="filter-btn" appearance="outline" width="full" icon-start="filter">
-            ${this.#filter.clauses.length > 0 ? `Filter (${this.#filter.clauses.length})` : "Filter features"}
-          </calcite-button>
-
-          <div style="display:flex; gap:0.5rem;">
-            <calcite-input id="save-name-input" placeholder="Save map configuration" style="flex:1;"></calcite-input>
-            <calcite-button id="save-btn">Save</calcite-button>
-          </div>
-          ${
-            this.#saveMessage
-              ? `<calcite-notice open kind="success"><div slot="message">${escapeHtml(this.#saveMessage)}</div></calcite-notice>`
-              : ""
-          }
-
-          <calcite-button id="share-btn" appearance="outline" width="full" icon-start="share">Share</calcite-button>
-
-          <calcite-button id="change-layer-btn" appearance="transparent" width="full">Start Over</calcite-button>
         </div>
-      </calcite-panel>
-    `;
+      `;
+    } else {
+      this.#options.bottomContainer.classList.add("chrome-hidden");
+      this.#options.bottomContainer.innerHTML = "";
+
+      this.#container.innerHTML = `
+        <calcite-panel heading="Frame your board">
+          <div style="padding:0 1rem 1rem; display:flex; flex-direction:column; gap:0.75rem;">
+            <p style="margin:0;">Layer: <strong>${escapeHtml(this.#options.layerName)}</strong></p>
+            <p style="margin:0; color: var(--calcite-color-text-3);">From: ${escapeHtml(this.#options.itemTitle)}</p>
+
+            ${
+              this.#startError
+                ? `<calcite-notice open kind="warning" closable><div slot="message">${escapeHtml(this.#startError)}</div></calcite-notice>`
+                : ""
+            }
+
+            <calcite-segmented-control id="difficulty-control" width="full" scale="s">
+              <calcite-segmented-control-item value="beginner" ${this.#difficulty === "beginner" ? "checked" : ""}>Beginner 9×9</calcite-segmented-control-item>
+              <calcite-segmented-control-item value="intermediate" ${this.#difficulty === "intermediate" ? "checked" : ""}>Intermediate 16×16</calcite-segmented-control-item>
+              <calcite-segmented-control-item value="expert" ${this.#difficulty === "expert" ? "checked" : ""}>Expert 22×22</calcite-segmented-control-item>
+              <calcite-segmented-control-item value="custom" ${this.#difficulty === "custom" ? "checked" : ""}>Custom</calcite-segmented-control-item>
+            </calcite-segmented-control>
+
+            ${
+              this.#difficulty === "custom"
+                ? `<calcite-slider id="custom-size-slider" min="${CUSTOM_MIN}" max="${CUSTOM_MAX}" value="${this.#gridSize}" label-handles ticks="2"></calcite-slider>`
+                : ""
+            }
+
+            ${countLine}
+
+            <calcite-label layout="inline" style="margin:0;">
+              <calcite-switch id="preview-toggle" ${this.#previewVisible ? "checked" : ""}></calcite-switch>
+              ${this.#options.geometryType === "point" ? "Show point clusters" : "Show feature clusters"}
+            </calcite-label>
+
+            ${startBtnHtml}
+
+            <calcite-button id="filter-btn" appearance="outline" width="full" icon-start="filter">
+              ${this.#filter.clauses.length > 0 ? `Filter (${this.#filter.clauses.length})` : "Filter features"}
+            </calcite-button>
+
+            <div style="display:flex; gap:0.5rem;">
+              <calcite-input id="save-name-input" placeholder="Save map configuration" style="flex:1;"></calcite-input>
+              <calcite-button id="save-btn">Save</calcite-button>
+            </div>
+            ${
+              this.#saveMessage
+                ? `<calcite-notice open kind="success"><div slot="message">${escapeHtml(this.#saveMessage)}</div></calcite-notice>`
+                : ""
+            }
+
+            ${shareBtnHtml}
+
+            ${startOverBtnHtml}
+          </div>
+        </calcite-panel>
+      `;
+    }
 
     this.#container.querySelector("#difficulty-control")?.addEventListener("calciteSegmentedControlChange", (e) => {
       const value = (e.target as HTMLElement & { value: string }).value as Difficulty;
@@ -506,14 +573,24 @@ export class FramingPanel {
       this.#setDifficulty("custom", value);
     });
 
-    this.#container.querySelector("#start-btn")?.addEventListener("click", () => {
+    // Start/Share/Start Over live in bottomContainer on mobile, inline in
+    // container on desktop - see the branch above.
+    const actionScope = mobile ? this.#options.bottomContainer : this.#container;
+
+    actionScope.querySelector("#start-btn")?.addEventListener("click", () => {
       if (!this.#canStart() || !this.#gridExtent) return;
       this.#startError = null;
       this.#options.onStart(this.#gridSize, this.#gridExtent, this.#featureCount ?? 0);
     });
 
-    this.#container.querySelector("#change-layer-btn")?.addEventListener("click", () => {
+    actionScope.querySelector("#change-layer-btn")?.addEventListener("click", () => {
       this.#options.onChangeLayer();
+    });
+
+    actionScope.querySelector("#share-btn")?.addEventListener("click", () => {
+      const params = this.#shareParams();
+      if (!params) return;
+      new ShareDialog({ url: buildShareUrl(params) });
     });
 
     this.#container.querySelector("#filter-btn")?.addEventListener("click", () => {
@@ -528,12 +605,6 @@ export class FramingPanel {
     this.#container.querySelector("#save-btn")?.addEventListener("click", () => this.#save());
     this.#container.querySelector("#save-name-input")?.addEventListener("keydown", (e) => {
       if ((e as KeyboardEvent).key === "Enter") this.#save();
-    });
-
-    this.#container.querySelector("#share-btn")?.addEventListener("click", () => {
-      const params = this.#shareParams();
-      if (!params) return;
-      new ShareDialog({ url: buildShareUrl(params) });
     });
 
     this.#container.querySelector("calcite-notice[kind='warning']")?.addEventListener("calciteNoticeClose", () => {

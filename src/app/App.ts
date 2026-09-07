@@ -21,6 +21,7 @@ import { type SavedMapExample } from "./savedMapExamples.ts";
 import {
   type ArcgisMapElement,
   type ArcgisBasemapGalleryElement,
+  type ArcgisExpandElement,
   whenViewReady,
   addHiddenLayer,
   removeLayer,
@@ -39,6 +40,7 @@ import { buildShareUrl, parseShareParams, type ShareParams } from "./shareUrl.ts
 import { EMPTY_FILTER, buildWhereClause } from "./filterExpression.ts";
 import { getCurrentTheme, setCurrentTheme } from "./themeStore.ts";
 import { getTheme } from "../game/themes.ts";
+import { isMobile } from "./responsive.ts";
 
 interface Destroyable {
   destroy(): void;
@@ -59,9 +61,10 @@ export interface AppElements {
   landingContent: HTMLElement;
   sidePanel: HTMLElement;
   mapStage: HTMLElement;
-  menuToggle: HTMLElement;
+  mobileActionPanel: HTMLElement;
   zoomWidget: HTMLElement;
   basemapGallery: ArcgisBasemapGalleryElement;
+  basemapGalleryExpand: ArcgisExpandElement;
 }
 
 export class App {
@@ -72,9 +75,10 @@ export class App {
   #landingContent: HTMLElement;
   #sidePanel: HTMLElement;
   #mapStage: HTMLElement;
-  #menuToggle: HTMLElement;
+  #mobileActionPanel: HTMLElement;
   #zoomWidget: HTMLElement;
   #basemapGallery: ArcgisBasemapGalleryElement;
+  #basemapGalleryExpand: ArcgisExpandElement;
   #view: MapView | null = null;
   #layerPicker: LayerPickerDialog;
   #activePanel: Destroyable | null = null;
@@ -90,9 +94,10 @@ export class App {
     this.#landingContent = elements.landingContent;
     this.#sidePanel = elements.sidePanel;
     this.#mapStage = elements.mapStage;
-    this.#menuToggle = elements.menuToggle;
+    this.#mobileActionPanel = elements.mobileActionPanel;
     this.#zoomWidget = elements.zoomWidget;
     this.#basemapGallery = elements.basemapGallery;
+    this.#basemapGalleryExpand = elements.basemapGalleryExpand;
     this.#themeId = getCurrentTheme();
     this.#store = new AppStore({ screen: "intro" });
 
@@ -185,6 +190,11 @@ export class App {
   #renderScreen(state: AppState): void {
     this.#activePanel?.destroy();
     this.#activePanel = null;
+    // Only FramingPanel (mobile mode) un-hides/populates this - every other
+    // screen must start from "hidden and empty" rather than inherit stale
+    // Start/Share/Start Over buttons from a previous framing screen.
+    this.#mobileActionPanel.classList.add("chrome-hidden");
+    this.#mobileActionPanel.replaceChildren();
 
     switch (state.screen) {
       case "intro":
@@ -218,7 +228,6 @@ export class App {
     this.#landingContent.classList.toggle("chrome-hidden", visible);
     this.#sidePanel.classList.toggle("chrome-hidden", !visible);
     this.#mapStage.classList.toggle("chrome-hidden", !visible);
-    this.#menuToggle.classList.toggle("chrome-hidden", !visible);
   }
 
   #renderLanding(): void {
@@ -273,7 +282,7 @@ export class App {
     // game-over reveal button.
     hideLayer(chosen.layer);
     unfreezeView(this.#view);
-    setMapWidgetsVisible([this.#zoomWidget, this.#basemapGallery], true);
+    setMapWidgetsVisible([this.#zoomWidget, this.#basemapGalleryExpand], true);
 
     if (this.#pendingGoTo) {
       const goTo = this.#pendingGoTo;
@@ -290,7 +299,10 @@ export class App {
     // readiness (e.g. the user picked a different layer, or cancelled).
     if (this.#store.state.screen !== "framing" || this.#store.state.chosen !== chosen) return;
 
-    const initialGridSize = gridSize ?? DIFFICULTY_SIZE.intermediate;
+    // Anything other than 9x9 is unplayable on a small screen, so mobile
+    // always forces beginner size here - regardless of what gridSize a
+    // restart/retry/restored session would otherwise carry forward.
+    const initialGridSize = isMobile() ? DIFFICULTY_SIZE.beginner : (gridSize ?? DIFFICULTY_SIZE.intermediate);
     this.#activePanel = new FramingPanel(this.#panelContent, {
       view: this.#view,
       layer: chosen.layer,
@@ -302,6 +314,7 @@ export class App {
       initialError: startError,
       initialFilter: chosen.filter,
       themeId: this.#themeId,
+      bottomContainer: this.#mobileActionPanel,
       onStart: (gridSize, gridExtent, featureCount) => {
         this.#store.setState({ screen: "preparing", chosen, gridSize, gridExtent, featureCount });
       },
@@ -327,7 +340,11 @@ export class App {
 
     hideLayer(state.chosen.layer);
     freezeView(view);
-    setMapWidgetsVisible([this.#zoomWidget, this.#basemapGallery], false);
+    // Collapse back to the icon so a game that starts mid-pick doesn't leave
+    // the gallery panel expanded once it's hidden (chrome-hidden just hides
+    // the whole widget; collapse() resets its own open/closed state).
+    void this.#basemapGalleryExpand.collapse();
+    setMapWidgetsVisible([this.#zoomWidget, this.#basemapGalleryExpand], false);
 
     try {
       const layerView = await view.whenLayerView(state.chosen.layer);

@@ -25,7 +25,9 @@
         <div id="map-square">
           <arcgis-map id="game-map" basemap="dark-gray-vector" center="0,0" zoom="2">
             <arcgis-zoom id="map-zoom-widget" slot="top-left"></arcgis-zoom>
-            <arcgis-basemap-gallery id="map-basemap-gallery" slot="top-right"></arcgis-basemap-gallery>
+            <arcgis-expand id="map-basemap-gallery-expand" slot="top-right" expand-icon="basemap" expand-tooltip="Change basemap" collapse-tooltip="Close basemap picker">
+              <arcgis-basemap-gallery id="map-basemap-gallery"></arcgis-basemap-gallery>
+            </arcgis-expand>
           </arcgis-map>
           <div id="board-overlay"></div>
         </div>

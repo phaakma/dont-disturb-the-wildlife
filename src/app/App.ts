@@ -21,6 +21,7 @@ import { type SavedMapExample } from "./savedMapExamples.ts";
 import {
   type ArcgisMapElement,
   type ArcgisBasemapGalleryElement,
+  type ArcgisExpandElement,
   whenViewReady,
   addHiddenLayer,
   removeLayer,
@@ -62,6 +63,7 @@ export interface AppElements {
   menuToggle: HTMLElement;
   zoomWidget: HTMLElement;
   basemapGallery: ArcgisBasemapGalleryElement;
+  basemapGalleryExpand: ArcgisExpandElement;
 }
 
 export class App {
@@ -75,6 +77,7 @@ export class App {
   #menuToggle: HTMLElement;
   #zoomWidget: HTMLElement;
   #basemapGallery: ArcgisBasemapGalleryElement;
+  #basemapGalleryExpand: ArcgisExpandElement;
   #view: MapView | null = null;
   #layerPicker: LayerPickerDialog;
   #activePanel: Destroyable | null = null;
@@ -93,6 +96,7 @@ export class App {
     this.#menuToggle = elements.menuToggle;
     this.#zoomWidget = elements.zoomWidget;
     this.#basemapGallery = elements.basemapGallery;
+    this.#basemapGalleryExpand = elements.basemapGalleryExpand;
     this.#themeId = getCurrentTheme();
     this.#store = new AppStore({ screen: "intro" });
 
@@ -273,7 +277,7 @@ export class App {
     // game-over reveal button.
     hideLayer(chosen.layer);
     unfreezeView(this.#view);
-    setMapWidgetsVisible([this.#zoomWidget, this.#basemapGallery], true);
+    setMapWidgetsVisible([this.#zoomWidget, this.#basemapGalleryExpand], true);
 
     if (this.#pendingGoTo) {
       const goTo = this.#pendingGoTo;
@@ -327,7 +331,11 @@ export class App {
 
     hideLayer(state.chosen.layer);
     freezeView(view);
-    setMapWidgetsVisible([this.#zoomWidget, this.#basemapGallery], false);
+    // Collapse back to the icon so a game that starts mid-pick doesn't leave
+    // the gallery panel expanded once it's hidden (chrome-hidden just hides
+    // the whole widget; collapse() resets its own open/closed state).
+    void this.#basemapGalleryExpand.collapse();
+    setMapWidgetsVisible([this.#zoomWidget, this.#basemapGalleryExpand], false);
 
     try {
       const layerView = await view.whenLayerView(state.chosen.layer);

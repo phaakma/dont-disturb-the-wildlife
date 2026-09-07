@@ -7,6 +7,7 @@ import "./style.css";
 import "@arcgis/map-components/components/arcgis-map";
 import "@arcgis/map-components/components/arcgis-zoom";
 import "@arcgis/map-components/components/arcgis-basemap-gallery";
+import "@arcgis/map-components/components/arcgis-expand";
 import "@esri/calcite-components/components/calcite-shell";
 import "@esri/calcite-components/components/calcite-shell-panel";
 import "@esri/calcite-components/components/calcite-navigation";
@@ -16,7 +17,7 @@ import "@esri/calcite-components/components/calcite-action";
 import { App } from "./app/App.ts";
 import { setupResponsivePanel } from "./app/responsivePanel.ts";
 import { AboutDialog } from "./components/AboutDialog.ts";
-import type { ArcgisMapElement, ArcgisBasemapGalleryElement } from "./arcgis/mapSetup.ts";
+import type { ArcgisMapElement, ArcgisBasemapGalleryElement, ArcgisExpandElement } from "./arcgis/mapSetup.ts";
 
 const panelContent = document.getElementById("panel-content");
 if (!panelContent) throw new Error("#panel-content not found in index.html");
@@ -48,8 +49,22 @@ if (!zoomWidget) throw new Error("#map-zoom-widget not found in index.html");
 const basemapGallery = document.getElementById("map-basemap-gallery") as ArcgisBasemapGalleryElement | null;
 if (!basemapGallery) throw new Error("#map-basemap-gallery not found in index.html");
 
+const basemapGalleryExpand = document.getElementById("map-basemap-gallery-expand") as ArcgisExpandElement | null;
+if (!basemapGalleryExpand) throw new Error("#map-basemap-gallery-expand not found in index.html");
+
 setupResponsivePanel(sidePanel, menuToggle);
 
 aboutToggle.addEventListener("click", () => new AboutDialog().open());
 
-new App({ panelContent, mapEl, boardOverlay, landingContent, sidePanel, mapStage, menuToggle, zoomWidget, basemapGallery });
+new App({
+  panelContent,
+  mapEl,
+  boardOverlay,
+  landingContent,
+  sidePanel,
+  mapStage,
+  menuToggle,
+  zoomWidget,
+  basemapGallery,
+  basemapGalleryExpand,
+});

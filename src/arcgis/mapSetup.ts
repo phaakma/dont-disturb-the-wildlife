@@ -14,6 +14,11 @@ export interface ArcgisBasemapGalleryElement extends HTMLElement {
   source: LocalBasemapsSource;
 }
 
+export interface ArcgisExpandElement extends HTMLElement {
+  expanded: boolean;
+  collapse(): Promise<void>;
+}
+
 /** The basemap styles offered in the game's basemap picker; see #configureBasemapGallery. */
 export const BASEMAP_IDS = ["dark-gray-vector", "satellite", "streets-navigation-vector"] as const;
 export const DEFAULT_BASEMAP_ID: (typeof BASEMAP_IDS)[number] = "dark-gray-vector";
